@@ -23,6 +23,11 @@ public:
     
     //zaporne osetrit
     BigNum(int64_t n) {
+        if (n < 0) {
+            negativ = true;
+            n *= -1;
+        }
+
         number.insert(number.begin(), static_cast<uint8_t>('0' + (n % 10)));
         n /= 10;
         while (n > 0) {
@@ -40,7 +45,12 @@ public:
         
 
         //check for +,-
-        if (str[0] == '-' || str[0] == '+')
+        if (str[0] == '-') {
+            negativ = true;
+            i++;
+        }
+        
+        if( str[0] == '+')
             i++;
 
         //0s deleting
@@ -80,6 +90,7 @@ private:
     // here you can add private data and members, but do not add stuff to 
     // public interface, also you can declare friends here if you want
     std::vector<uint8_t> number;
+    bool negativ = false;
     friend  std::ostream& operator<<(std::ostream& lhs, const BigNum& rhs);
 };
 BigNum operator+(BigNum lhs, const BigNum& rhs);
@@ -101,6 +112,9 @@ bool operator<=(const BigNum& lhs, const BigNum& rhs);
 bool operator>=(const BigNum& lhs, const BigNum& rhs);
 
 std::ostream& operator<<(std::ostream& lhs, const BigNum& rhs) {
+    if (rhs.negativ)
+        lhs << (uint8_t)'-';
+
     for (size_t i = 0; i < rhs.number.size(); i++) {
         lhs << rhs.number[i];
     }
@@ -117,7 +131,7 @@ int main()
 {
     BigNum a;
 
-    BigNum b(1232839009283092);
+    BigNum b(-283092);
 
 
     BigNum c("0");      
@@ -125,10 +139,10 @@ int main()
     BigNum e("+0");
     BigNum f("-012");
     BigNum g("+100");
-    BigNum h("1820");
+    BigNum h("-182220");
     BigNum i("00012");
 
-    std::cout <<b << " " << c << " " << d << " " << e << " " << f << " " << g << '\n';
+    std::cout <<b << " " << c << " " << d << " " << e << " " << f << " " << h << '\n';
     try
     {
         BigNum x("");
