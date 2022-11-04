@@ -72,16 +72,72 @@ public:
         if (number.size() == 0)
             number.push_back(static_cast<uint8_t>('0'));
     }
+    
+    
+    
     // copy
-    BigNum(const BigNum& other);
-    BigNum& operator=(const BigNum& rhs);
+    BigNum(const BigNum& other) {
+        number = other.number;  
+        negativ = other.negativ;
+
+    };
+
+    //neviem ci treba
+   /* BigNum& operator=(const BigNum& rhs) {
+        number = rhs.number;
+        negativ = rhs.negativ;
+
+        return *this;
+    };*/
+    
+    
+    
     // unary operators
-    const BigNum& operator+() const;
-    BigNum operator-() const;
+    const BigNum& operator+() const {
+        return *this;
+    };
+    BigNum operator-() const {
+        //this.negativ = !negativ; ???
+        return *this;
+    };
+    
+    
+    
     // binary arithmetics operators
-    BigNum& operator+=(const BigNum& rhs);
+    BigNum& operator+=(const BigNum& rhs) {
+        int ri = static_cast<int>(rhs.number.size()-1), ni = static_cast<int>(number.size()-1);
+        std::vector<uint8_t> tmp;
+
+        int buf = 0;
+        if ((!rhs.negativ && !negativ) || (rhs.negativ && negativ)) {
+            // + (+) + 
+            for (; ri >= 0 || ni >= 0 || buf > 0; ri--, ni--) {
+                tmp.insert(tmp.begin(), '0' + (((ni >= 0 ? number[ni] : '0') + (ri >= 0 ? rhs.number[ri] : '0') + buf - 2 * '0') % 10));
+                buf = ((ni >= 0 ? number[ni] : '0') + (ri >= 0 ? rhs.number[ri] : '0') + buf - 2 * '0') / 10;
+            
+            }
+        }
+        else {
+            //TODO
+            // - (+) +
+            for (; ri >= 0 || ni >= 0 ; ri--, ni--) {
+                tmp.insert(tmp.begin(), '0' + (( 10 + (ni >= 0 ? number[ni] : '0') - (ri >= 0 ? rhs.number[ri] : '0') - buf) % 10));
+
+                std::cout << (10 + (ni >= 0 ? number[ni] : '0')) << ' ' << ((ri >= 0 ? rhs.number[ri] : '0') - buf)  << '\n';
+                buf = 1 - ((10 + (ni >= 0 ? number[ni] : '0') - (ri >= 0 ? rhs.number[ri] : '0') - buf ) / 10);
+
+            }
+       
+        }
+
+        
+        number = tmp;
+        return *this;
+    }
     BigNum& operator-=(const BigNum& rhs);
     BigNum& operator*=(const BigNum& rhs);
+
+
 #if SUPPORT_DIVISION == 1
     BigNum& operator/=(const BigNum& rhs); // bonus
     BigNum& operator%=(const BigNum& rhs); // bonus
@@ -92,7 +148,10 @@ private:
     std::vector<uint8_t> number;
     bool negativ = false;
     friend  std::ostream& operator<<(std::ostream& lhs, const BigNum& rhs);
+    friend bool operator==(const BigNum& lhs, const BigNum& rhs);
+    friend bool operator<(const BigNum& lhs, const BigNum& rhs);
 };
+
 BigNum operator+(BigNum lhs, const BigNum& rhs);
 BigNum operator-(BigNum lhs, const BigNum& rhs);
 BigNum operator*(BigNum lhs, const BigNum& rhs);
@@ -104,12 +163,43 @@ BigNum operator%(BigNum lhs, const BigNum& rhs); // bonus
 // alternatively you can implement 
 // std::strong_ordering operator<=>(const BigNum& lhs, const BigNum& rhs);
 // idea is, that all comparison should work, it is not important how you do it
-bool operator==(const BigNum& lhs, const BigNum& rhs);
-bool operator!=(const BigNum& lhs, const BigNum& rhs);
-bool operator<(const BigNum& lhs, const BigNum& rhs);
-bool operator>(const BigNum& lhs, const BigNum& rhs);
-bool operator<=(const BigNum& lhs, const BigNum& rhs);
-bool operator>=(const BigNum& lhs, const BigNum& rhs);
+bool operator==(const BigNum& lhs, const BigNum& rhs) {
+    if (lhs.number.size() != rhs.number.size() || lhs.negativ != rhs.negativ)
+        return false;
+    for (size_t i = 0; i < lhs.number.size(); i++) {
+        if (lhs.number[i] != rhs.number[i])
+            return false;
+    }
+    return true;
+}
+bool operator!=(const BigNum& lhs, const BigNum& rhs) {
+    return !(lhs == rhs);
+}
+
+bool operator<(const BigNum& lhs, const BigNum& rhs) {
+    if (lhs.negativ != rhs.negativ)
+        return lhs.negativ;
+    if (lhs.number.size() != rhs.number.size()) {
+        return ( lhs.number.size() < rhs.number.size() )^lhs.negativ ;
+    }
+
+    for (size_t i = 0; i < lhs.number.size(); i++) {
+        if (lhs.number[i] != rhs.number[i])
+            return (lhs.number[i] < rhs.number[i])^lhs.negativ;
+    }
+    return false;
+}
+
+bool operator>=(const BigNum& lhs, const BigNum& rhs) {
+    return !(lhs < rhs);
+}
+bool operator>(const BigNum& lhs, const BigNum& rhs) {
+    return (lhs >= rhs) && (lhs != rhs);
+}
+
+bool operator<=(const BigNum& lhs, const BigNum& rhs) {
+    return !(lhs > rhs);
+}
 
 std::ostream& operator<<(std::ostream& lhs, const BigNum& rhs) {
     if (rhs.negativ)
@@ -129,32 +219,38 @@ std::istream& operator>>(std::istream& lhs, BigNum& rhs); // bonus
 
 int main()
 {
-    BigNum a;
 
-    BigNum b(-283092);
-
-
-    BigNum c("0");      
-    BigNum d("-0");
+    BigNum b(-1392);
+    BigNum c(b);
+    BigNum d("-12292");
     BigNum e("+0");
-    BigNum f("-012");
-    BigNum g("+100");
-    BigNum h("-182220");
-    BigNum i("00012");
+    
+    
+    std::cout << (c==b) << (c<=b) << (c>=b) << (c<b) << (c>b) << '\n';
+    std::cout << (c == d) << (c <= d) << (c >= d) << (c < d) << (c > d) << '\n';
+    std::cout << (c == e) << (c <= e) << (c >= e) << (c < e) << (c > e)<< '\n';
+    //BigNum c("0");      
+    //BigNum d("-0");
+    //BigNum f("-012");
+    //BigNum g("+100");
+    //BigNum h("-182220");
+    //BigNum i("00012");
 
-    std::cout <<b << " " << c << " " << d << " " << e << " " << f << " " << h << '\n';
-    try
-    {
-        BigNum x("");
+    //std::cout <<b << " " << c << " " << d << " " << e << " " << f << " " << h << '\n';
+    //try
+    //{
+    //    BigNum x("");
 
-        BigNum j("00012a");
-        BigNum k("a00012");
-        BigNum l("00 012");
-        BigNum m("0001-2");
-    }
-    catch (const std::exception& e)
-    {
-        std::cout << e.what();
-    }
+    //    BigNum j("00012a");
+    //    BigNum k("a00012");
+    //    BigNum l("00 012");
+    //    BigNum m("0001-2");
+    //}
+    //catch (const std::exception& e)
+    //{
+    //    std::cout << e.what();
+    //}
+
+
 	return 0;
 }
