@@ -13,6 +13,7 @@
 
 // if you do not plan to implement bonus, you can delete those lines
 // or just keep them as is and do not define the macro to 1
+
 class BigNum final
 {
 public:
@@ -21,7 +22,7 @@ public:
         number.push_back(static_cast<uint8_t>('0'));
     }
     
-    //zaporne osetrit
+
     BigNum(int64_t n) {
         if (n < 0) {
             negativ = true;
@@ -97,41 +98,18 @@ public:
         return *this;
     };
     BigNum operator-() const {
-        //this.negativ = !negativ; ???
-        return *this;
+        BigNum x;
+        x.negativ = !negativ;
+        x.number = number;
+        return x;
     };
     
     
     
     // binary arithmetics operators
     BigNum& operator+=(const BigNum& rhs) {
-        int ri = static_cast<int>(rhs.number.size()-1), ni = static_cast<int>(number.size()-1);
-        std::vector<uint8_t> tmp;
-
-        int buf = 0;
-        if ((!rhs.negativ && !negativ) || (rhs.negativ && negativ)) {
-            // + (+) + 
-            for (; ri >= 0 || ni >= 0 || buf > 0; ri--, ni--) {
-                tmp.insert(tmp.begin(), '0' + (((ni >= 0 ? number[ni] : '0') + (ri >= 0 ? rhs.number[ri] : '0') + buf - 2 * '0') % 10));
-                buf = ((ni >= 0 ? number[ni] : '0') + (ri >= 0 ? rhs.number[ri] : '0') + buf - 2 * '0') / 10;
-            
-            }
-        }
-        else {
-            //TODO
-            // - (+) +
-            for (; ri >= 0 || ni >= 0 ; ri--, ni--) {
-                tmp.insert(tmp.begin(), '0' + (( 10 + (ni >= 0 ? number[ni] : '0') - (ri >= 0 ? rhs.number[ri] : '0') - buf) % 10));
-
-                std::cout << (10 + (ni >= 0 ? number[ni] : '0')) << ' ' << ((ri >= 0 ? rhs.number[ri] : '0') - buf)  << '\n';
-                buf = 1 - ((10 + (ni >= 0 ? number[ni] : '0') - (ri >= 0 ? rhs.number[ri] : '0') - buf ) / 10);
-
-            }
-       
-        }
-
-        
-        number = tmp;
+      
+        * this = *this + rhs;
         return *this;
     }
     BigNum& operator-=(const BigNum& rhs);
@@ -150,15 +128,8 @@ private:
     friend  std::ostream& operator<<(std::ostream& lhs, const BigNum& rhs);
     friend bool operator==(const BigNum& lhs, const BigNum& rhs);
     friend bool operator<(const BigNum& lhs, const BigNum& rhs);
+    friend BigNum operator+(BigNum lhs, const BigNum& rhs);
 };
-
-BigNum operator+(BigNum lhs, const BigNum& rhs);
-BigNum operator-(BigNum lhs, const BigNum& rhs);
-BigNum operator*(BigNum lhs, const BigNum& rhs);
-#if SUPPORT_DIVISION == 1
-BigNum operator/(BigNum lhs, const BigNum& rhs); // bonus
-BigNum operator%(BigNum lhs, const BigNum& rhs); // bonus
-#endif
 
 // alternatively you can implement 
 // std::strong_ordering operator<=>(const BigNum& lhs, const BigNum& rhs);
@@ -175,31 +146,83 @@ bool operator==(const BigNum& lhs, const BigNum& rhs) {
 bool operator!=(const BigNum& lhs, const BigNum& rhs) {
     return !(lhs == rhs);
 }
-
 bool operator<(const BigNum& lhs, const BigNum& rhs) {
     if (lhs.negativ != rhs.negativ)
         return lhs.negativ;
     if (lhs.number.size() != rhs.number.size()) {
-        return ( lhs.number.size() < rhs.number.size() )^lhs.negativ ;
+        return (lhs.number.size() < rhs.number.size()) ^ lhs.negativ;
     }
 
     for (size_t i = 0; i < lhs.number.size(); i++) {
         if (lhs.number[i] != rhs.number[i])
-            return (lhs.number[i] < rhs.number[i])^lhs.negativ;
+            return (lhs.number[i] < rhs.number[i]) ^ lhs.negativ;
     }
     return false;
 }
-
 bool operator>=(const BigNum& lhs, const BigNum& rhs) {
     return !(lhs < rhs);
 }
 bool operator>(const BigNum& lhs, const BigNum& rhs) {
     return (lhs >= rhs) && (lhs != rhs);
 }
-
 bool operator<=(const BigNum& lhs, const BigNum& rhs) {
     return !(lhs > rhs);
 }
+
+BigNum operator+(BigNum lhs, const BigNum& rhs) {
+    int ri = static_cast<int>(rhs.number.size() - 1), ni = static_cast<int>(lhs.number.size() - 1);
+    BigNum result;
+    result.number.erase(result.number.begin());
+
+    int buf = 0;
+    uint8_t ltem = 0, rtem = 0, offset =  '0';
+    if ((!rhs.negativ && !lhs.negativ) || (rhs.negativ && lhs.negativ)) {
+        // + (+) +  and - (+) -
+        for (; ri >= 0 || ni >= 0 || buf > 0; ri--, ni--) {
+            ltem = (ni >= 0 ? lhs.number[ni] : offset);
+            rtem = (ri >= 0 ? rhs.number[ri] : offset);
+            result.number.insert(result.number.begin(), offset + ((ltem + rtem + buf - 2*offset) % 10));
+            buf = (ltem + rtem + buf - 2*offset) / 10;
+        }
+        result.negativ = rhs.negativ;
+
+    }
+    else {
+        //TODO treba porovnavanie number nie BigNum
+        // + (+) - 
+        if (lhs > rhs) {
+            for (; ri >= 0 || ni >= 0; ri--, ni--) {
+                ltem = (ni >= 0 ? lhs.number[ni] : offset);
+                rtem = (ri >= 0 ? rhs.number[ri] : offset);
+                result.number.insert(result.number.begin(), offset + ((10 + ltem - rtem - buf) % 10));
+                buf = 1 - ((10 + ltem - rtem - buf) / 10);
+            }
+        }
+        else {
+            std::cout << "<=";
+            for (; ri >= 0 || ni >= 0; ri--, ni--) {
+                ltem = (ni >= 0 ? lhs.number[ni] : offset);
+                rtem = (ri >= 0 ? rhs.number[ri] : offset);
+                result.number.insert(result.number.begin(), offset + ((10 + rtem - ltem - buf) % 10));
+                buf = 1 - ((10 + rtem - ltem  - buf) / 10);
+
+            }
+        }
+
+    }
+
+
+
+    return result;
+}
+BigNum operator-(BigNum lhs, const BigNum& rhs);
+BigNum operator*(BigNum lhs, const BigNum& rhs);
+#if SUPPORT_DIVISION == 1
+BigNum operator/(BigNum lhs, const BigNum& rhs); // bonus
+BigNum operator%(BigNum lhs, const BigNum& rhs); // bonus
+#endif
+
+
 
 std::ostream& operator<<(std::ostream& lhs, const BigNum& rhs) {
     if (rhs.negativ)
@@ -220,15 +243,16 @@ std::istream& operator>>(std::istream& lhs, BigNum& rhs); // bonus
 int main()
 {
 
-    BigNum b(-1392);
+    BigNum b(-110);
     BigNum c(b);
-    BigNum d("-12292");
+    BigNum d("120");
     BigNum e("+0");
-    
-    
+    std::cout << b+d << "\n";
+
     std::cout << (c==b) << (c<=b) << (c>=b) << (c<b) << (c>b) << '\n';
     std::cout << (c == d) << (c <= d) << (c >= d) << (c < d) << (c > d) << '\n';
     std::cout << (c == e) << (c <= e) << (c >= e) << (c < e) << (c > e)<< '\n';
+    std::cout << +c << " " << -c;
     //BigNum c("0");      
     //BigNum d("-0");
     //BigNum f("-012");
