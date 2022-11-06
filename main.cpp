@@ -131,6 +131,17 @@ private:
     friend BigNum operator+(BigNum lhs, const BigNum& rhs);
 };
 
+bool vectorIsLess(const std::vector<uint8_t> lhs, const std::vector<uint8_t> rhs) {
+    if (lhs.size() != rhs.size()) {
+        return (lhs.size() < rhs.size());
+    }
+    for (size_t i = 0; i < lhs.size(); i++) {
+        if (lhs[i] != rhs[i])
+            return (lhs[i] < rhs[i]);
+    }
+    return false;
+}
+
 // alternatively you can implement 
 // std::strong_ordering operator<=>(const BigNum& lhs, const BigNum& rhs);
 // idea is, that all comparison should work, it is not important how you do it
@@ -171,9 +182,11 @@ bool operator<=(const BigNum& lhs, const BigNum& rhs) {
 
 BigNum operator+(BigNum lhs, const BigNum& rhs) {
     int ri = static_cast<int>(rhs.number.size() - 1), ni = static_cast<int>(lhs.number.size() - 1);
-    BigNum result;
-    result.number.erase(result.number.begin());
+    std::string res = "";
+    bool neg = false;
+    //result.number.erase(result.number.begin());
 
+    
     int buf = 0;
     uint8_t ltem = 0, rtem = 0, offset =  '0';
     if ((!rhs.negativ && !lhs.negativ) || (rhs.negativ && lhs.negativ)) {
@@ -181,38 +194,42 @@ BigNum operator+(BigNum lhs, const BigNum& rhs) {
         for (; ri >= 0 || ni >= 0 || buf > 0; ri--, ni--) {
             ltem = (ni >= 0 ? lhs.number[ni] : offset);
             rtem = (ri >= 0 ? rhs.number[ri] : offset);
-            result.number.insert(result.number.begin(), offset + ((ltem + rtem + buf - 2*offset) % 10));
+            res.insert(res.begin(), offset + ((ltem + rtem + buf - 2 * offset) % 10));
             buf = (ltem + rtem + buf - 2*offset) / 10;
         }
-        result.negativ = rhs.negativ;
+        neg = rhs.negativ;
 
     }
     else {
-        //TODO treba porovnavanie number nie BigNum
+
         // + (+) - 
-        if (lhs > rhs) {
+        if (!vectorIsLess(lhs.number, rhs.number)) {
             for (; ri >= 0 || ni >= 0; ri--, ni--) {
                 ltem = (ni >= 0 ? lhs.number[ni] : offset);
                 rtem = (ri >= 0 ? rhs.number[ri] : offset);
-                result.number.insert(result.number.begin(), offset + ((10 + ltem - rtem - buf) % 10));
+                res.insert(res.begin(), offset + ((10 + ltem - rtem - buf) % 10));
                 buf = 1 - ((10 + ltem - rtem - buf) / 10);
             }
+            neg = lhs.negativ;
         }
         else {
-            std::cout << "<=";
+            //std::cout << "<=";
             for (; ri >= 0 || ni >= 0; ri--, ni--) {
                 ltem = (ni >= 0 ? lhs.number[ni] : offset);
                 rtem = (ri >= 0 ? rhs.number[ri] : offset);
-                result.number.insert(result.number.begin(), offset + ((10 + rtem - ltem - buf) % 10));
+                res.insert(res.begin(), offset + ((10 + rtem - ltem - buf) % 10));
                 buf = 1 - ((10 + rtem - ltem  - buf) / 10);
-
             }
+            neg = rhs.negativ;
         }
 
     }
 
+    BigNum result(res);
 
-
+    if (result != 0) {
+        result.negativ = neg;
+    }
     return result;
 }
 BigNum operator-(BigNum lhs, const BigNum& rhs);
@@ -243,11 +260,14 @@ std::istream& operator>>(std::istream& lhs, BigNum& rhs); // bonus
 int main()
 {
 
-    BigNum b(-110);
+    BigNum b(-1110);
     BigNum c(b);
-    BigNum d("120");
+    BigNum d("1110");
     BigNum e("+0");
-    std::cout << b+d << "\n";
+    b + d;
+    d + b;
+    c + b;
+    std::cout << b+d <<" " << d + b << " "<<  c + b << "\n";
 
     std::cout << (c==b) << (c<=b) << (c>=b) << (c<b) << (c>b) << '\n';
     std::cout << (c == d) << (c <= d) << (c >= d) << (c < d) << (c > d) << '\n';
