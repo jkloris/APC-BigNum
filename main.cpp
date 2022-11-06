@@ -112,7 +112,10 @@ public:
         * this = *this + rhs;
         return *this;
     }
-    BigNum& operator-=(const BigNum& rhs);
+    BigNum& operator-=(const BigNum& rhs) {
+        *this = *this - rhs;
+        return *this;
+    }
     BigNum& operator*=(const BigNum& rhs);
 
 
@@ -129,6 +132,7 @@ private:
     friend bool operator==(const BigNum& lhs, const BigNum& rhs);
     friend bool operator<(const BigNum& lhs, const BigNum& rhs);
     friend BigNum operator+(BigNum lhs, const BigNum& rhs);
+    friend BigNum operator-(BigNum lhs, const BigNum& rhs);
 };
 
 bool vectorIsLess(const std::vector<uint8_t> lhs, const std::vector<uint8_t> rhs) {
@@ -232,7 +236,9 @@ BigNum operator+(BigNum lhs, const BigNum& rhs) {
     }
     return result;
 }
-BigNum operator-(BigNum lhs, const BigNum& rhs);
+BigNum operator-(BigNum lhs, const BigNum& rhs) {
+    return (lhs + ( - rhs));
+}
 BigNum operator*(BigNum lhs, const BigNum& rhs);
 #if SUPPORT_DIVISION == 1
 BigNum operator/(BigNum lhs, const BigNum& rhs); // bonus
@@ -260,14 +266,14 @@ std::istream& operator>>(std::istream& lhs, BigNum& rhs); // bonus
 int main()
 {
 
-    BigNum b(-1110);
+    BigNum b(-1);
     BigNum c(b);
-    BigNum d("1110");
+    BigNum d("2");
     BigNum e("+0");
-    b + d;
-    d + b;
+    b-= d;
+    c-=d + b;
     c + b;
-    std::cout << b+d <<" " << d + b << " "<<  c + b << "\n";
+    std::cout << b-d <<" " << d - b << " "<<  c - b << "\n";
 
     std::cout << (c==b) << (c<=b) << (c>=b) << (c<b) << (c>b) << '\n';
     std::cout << (c == d) << (c <= d) << (c >= d) << (c < d) << (c > d) << '\n';
