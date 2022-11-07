@@ -84,12 +84,12 @@ public:
     };
 
     //neviem ci treba
-   /* BigNum& operator=(const BigNum& rhs) {
+    BigNum& operator=(const BigNum& rhs) {
         number = rhs.number;
         negativ = rhs.negativ;
 
         return *this;
-    };*/
+    };
     
     
     
@@ -116,7 +116,10 @@ public:
         *this = *this - rhs;
         return *this;
     }
-    BigNum& operator*=(const BigNum& rhs);
+    BigNum& operator*=(const BigNum& rhs) {
+        *this = *this * rhs;
+        return *this;
+    }
 
 
 #if SUPPORT_DIVISION == 1
@@ -133,6 +136,7 @@ private:
     friend bool operator<(const BigNum& lhs, const BigNum& rhs);
     friend BigNum operator+(BigNum lhs, const BigNum& rhs);
     friend BigNum operator-(BigNum lhs, const BigNum& rhs);
+    friend BigNum operator*(BigNum lhs, const BigNum& rhs);
 };
 
 bool vectorIsLess(const std::vector<uint8_t> lhs, const std::vector<uint8_t> rhs) {
@@ -239,7 +243,40 @@ BigNum operator+(BigNum lhs, const BigNum& rhs) {
 BigNum operator-(BigNum lhs, const BigNum& rhs) {
     return (lhs + ( - rhs));
 }
-BigNum operator*(BigNum lhs, const BigNum& rhs);
+
+BigNum operator*(BigNum lhs, const BigNum& rhs) {
+    std::string res(lhs.number.size() + rhs.number.size() + 2, '0');
+    int ri = static_cast<int>(rhs.number.size() - 1), li = static_cast<int>(lhs.number.size() - 1);
+    int buf = 0, ltem = 0, rtem = 0;
+    size_t akti = lhs.number.size() + rhs.number.size() + 1, negakti=0;
+    char tmpres = '0';
+
+    for (; ri >= 0 ; ri--) {
+
+        for (li = static_cast<int>(lhs.number.size() - 1); li >=0 || buf > 0; li--) {
+            //std::cout << rhs.number[ri] << "*" << lhs.number[li] << '\n';
+            ltem = (li >= 0 ? (lhs.number[li] - '0') : 0);
+            rtem = (ri >= 0 ? (rhs.number[ri] - '0') : 0);
+            tmpres = '0' + ((buf + ltem * rtem + res[akti] - '0') % 10);
+            buf = (buf + ltem * rtem + res[akti] - '0') / 10;
+            res[akti] = tmpres;
+            akti--;
+            negakti++;
+        }
+
+        akti += negakti -1;
+        negakti = 0;
+
+    }
+
+    BigNum result(res);
+    if (rhs.negativ ^ lhs.negativ)
+        result.negativ = true;
+
+    return result;
+}
+
+
 #if SUPPORT_DIVISION == 1
 BigNum operator/(BigNum lhs, const BigNum& rhs); // bonus
 BigNum operator%(BigNum lhs, const BigNum& rhs); // bonus
@@ -266,16 +303,18 @@ std::istream& operator>>(std::istream& lhs, BigNum& rhs); // bonus
 int main()
 {
 
-    BigNum b(-1);
+    BigNum b("-1");
     BigNum c(b);
-    BigNum d("2");
+    BigNum d("-43");
     BigNum e("+0");
+    c *= -d;
+    std::cout << c << '\n';
     b-= d;
     c-=d + b;
     c + b;
     std::cout << b-d <<" " << d - b << " "<<  c - b << "\n";
 
-    std::cout << (c==b) << (c<=b) << (c>=b) << (c<b) << (c>b) << '\n';
+     std::cout << (c==b) << (c<=b) << (c>=b) << (c<b) << (c>b) << '\n';
     std::cout << (c == d) << (c <= d) << (c >= d) << (c < d) << (c > d) << '\n';
     std::cout << (c == e) << (c <= e) << (c >= e) << (c < e) << (c > e)<< '\n';
     std::cout << +c << " " << -c;
