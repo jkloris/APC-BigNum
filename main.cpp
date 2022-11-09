@@ -8,7 +8,7 @@
 #include <iostream>
 #include <stdexcept>
 
-#define SUPPORT_DIVISION 0 // define as 1 when you have implemented the division
+#define SUPPORT_DIVISION 1 // define as 1 when you have implemented the division
 #define SUPPORT_IFSTREAM 0 // define as 1 when you have implemented the input >>
 
 // if you do not plan to implement bonus, you can delete those lines
@@ -123,7 +123,12 @@ public:
 
 
 #if SUPPORT_DIVISION == 1
-    BigNum& operator/=(const BigNum& rhs); // bonus
+
+    BigNum& operator/=(const BigNum& rhs) {
+        *this = *this / rhs;
+        return  *this;
+    }
+
     BigNum& operator%=(const BigNum& rhs); // bonus
 #endif
 private:
@@ -137,6 +142,7 @@ private:
     friend BigNum operator+(BigNum lhs, const BigNum& rhs);
     friend BigNum operator-(BigNum lhs, const BigNum& rhs);
     friend BigNum operator*(BigNum lhs, const BigNum& rhs);
+    friend BigNum operator/(BigNum lhs, const BigNum& rhs);
 };
 
 bool vectorIsLess(const std::vector<uint8_t> lhs, const std::vector<uint8_t> rhs) {
@@ -270,15 +276,62 @@ BigNum operator*(BigNum lhs, const BigNum& rhs) {
     }
 
     BigNum result(res);
-    if (rhs.negativ ^ lhs.negativ)
+    if ((rhs.negativ ^ lhs.negativ) && result != 0)
         result.negativ = true;
 
     return result;
 }
 
-
 #if SUPPORT_DIVISION == 1
-BigNum operator/(BigNum lhs, const BigNum& rhs); // bonus
+
+
+BigNum operator/(BigNum lhs, const BigNum& rhs) {
+    std::vector<uint8_t> devv = {lhs.number[0]}, res;
+    size_t i = 1;
+ 
+    if (rhs == 0) {
+        std::cout << "div  by 0\n";
+        throw(std::logic_error("Division by zero"));
+    }
+    if (vectorIsLess(lhs.number, rhs.number)) {
+        return BigNum();
+    }
+    
+    while (vectorIsLess(devv, rhs.number)) {
+        devv.push_back(lhs.number[i]);
+        i++;
+    }
+
+    BigNum devisor, buff, rhsTemp;
+    devisor.number = devv;
+    devisor.negativ = false;
+    buff.negativ = false;
+    buff.number = rhs.number;
+    rhsTemp = buff;
+    size_t mark = i;
+
+    while (1) {
+        i = 0;
+        buff.number = rhs.number;
+        while (buff <= devisor) {
+            buff += rhsTemp;
+            i++;
+        }
+        buff -= rhsTemp;
+        res.push_back(static_cast<uint8_t>('0' + i));
+        if (mark >= lhs.number.size())
+            break;
+        devisor -= buff;
+
+        devisor = devisor * 10 + (lhs.number[mark]-'0');
+        mark++;
+    }
+
+    devisor.number = res;
+    devisor.negativ = lhs.negativ ^ rhs.negativ;
+
+    return devisor;
+}
 BigNum operator%(BigNum lhs, const BigNum& rhs); // bonus
 #endif
 
@@ -303,12 +356,13 @@ std::istream& operator>>(std::istream& lhs, BigNum& rhs); // bonus
 int main()
 {
 
-    BigNum b("-1");
+    BigNum b("2");
     BigNum c(b);
-    BigNum d("-43");
+    BigNum d("-4378");
     BigNum e("+0");
-    c *= -d;
-    std::cout << c << '\n';
+
+    d /= 2;
+    std::cout << d << '\n';
     b-= d;
     c-=d + b;
     c + b;
