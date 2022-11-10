@@ -129,7 +129,10 @@ public:
         return  *this;
     }
 
-    BigNum& operator%=(const BigNum& rhs); // bonus
+    BigNum& operator%=(const BigNum& rhs) {
+        *this = *this % rhs;
+        return  *this;
+    }
 #endif
 private:
     // here you can add private data and members, but do not add stuff to 
@@ -143,6 +146,7 @@ private:
     friend BigNum operator-(BigNum lhs, const BigNum& rhs);
     friend BigNum operator*(BigNum lhs, const BigNum& rhs);
     friend BigNum operator/(BigNum lhs, const BigNum& rhs);
+    friend BigNum operator%(BigNum lhs, const BigNum& rhs);
 };
 
 bool vectorIsLess(const std::vector<uint8_t> lhs, const std::vector<uint8_t> rhs) {
@@ -290,7 +294,6 @@ BigNum operator/(BigNum lhs, const BigNum& rhs) {
     size_t i = 1;
  
     if (rhs == 0) {
-        std::cout << "div  by 0\n";
         throw(std::logic_error("Division by zero"));
     }
     if (vectorIsLess(lhs.number, rhs.number)) {
@@ -332,7 +335,51 @@ BigNum operator/(BigNum lhs, const BigNum& rhs) {
 
     return devisor;
 }
-BigNum operator%(BigNum lhs, const BigNum& rhs); // bonus
+BigNum operator%(BigNum lhs, const BigNum& rhs) {
+    std::vector<uint8_t> devv = { lhs.number[0] }, res;
+    size_t i = 1;
+
+    if (rhs == 0) {
+        throw(std::logic_error("Division by zero"));
+    }
+    if (vectorIsLess(lhs.number, rhs.number)) {
+        return lhs;
+    }
+
+    while (vectorIsLess(devv, rhs.number)) {
+        devv.push_back(lhs.number[i]);
+        i++;
+    }
+
+    BigNum devisor, buff, rhsTemp;
+    devisor.number = devv;
+    devisor.negativ = false;
+    buff.negativ = false;
+    buff.number = rhs.number;
+    rhsTemp = buff;
+    size_t mark = i;
+
+    while (1) {
+        i = 0;
+        buff.number = rhs.number;
+        while (buff <= devisor) {
+            buff += rhsTemp;
+            i++;
+        }
+        buff -= rhsTemp;
+        res.push_back(static_cast<uint8_t>('0' + i));
+        devisor -= buff;
+        if (mark >= lhs.number.size())
+            break;
+
+        devisor = devisor * 10 + (lhs.number[mark] - '0');
+        mark++;
+    }
+
+    devisor.negativ = lhs.negativ;
+
+    return devisor;
+}
 #endif
 
 
@@ -355,24 +402,23 @@ std::istream& operator>>(std::istream& lhs, BigNum& rhs); // bonus
 
 int main()
 {
-
-    BigNum b("2");
+    int x = 222333, y = -97987;
+    BigNum b("-0010");
     BigNum c(b);
-    BigNum d("-4378");
-    BigNum e("+0");
-
-    d /= 2;
-    std::cout << d << '\n';
+    BigNum d(x);
+    BigNum e(y);
+    d %= e;
+    std::cout << d  << " " << x%y << '\n';
     b-= d;
     c-=d + b;
     c + b;
-    std::cout << b-d <<" " << d - b << " "<<  c - b << "\n";
+    //std::cout << b-d <<" " << d - b << " "<<  c - b << "\n";
 
-     std::cout << (c==b) << (c<=b) << (c>=b) << (c<b) << (c>b) << '\n';
-    std::cout << (c == d) << (c <= d) << (c >= d) << (c < d) << (c > d) << '\n';
-    std::cout << (c == e) << (c <= e) << (c >= e) << (c < e) << (c > e)<< '\n';
-    std::cout << +c << " " << -c;
-    //BigNum c("0");      
+    // std::cout << (c==b) << (c<=b) << (c>=b) << (c<b) << (c>b) << '\n';
+    //std::cout << (c == d) << (c <= d) << (c >= d) << (c < d) << (c > d) << '\n';
+    //std::cout << (c == e) << (c <= e) << (c >= e) << (c < e) << (c > e)<< '\n';
+    //std::cout << +c << " " << -c;
+    ////BigNum c("0");      
     //BigNum d("-0");
     //BigNum f("-012");
     //BigNum g("+100");
